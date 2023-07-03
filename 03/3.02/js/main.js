@@ -13,9 +13,7 @@ d3.json("data/buildings.json").then(data => {
     d.height = Number(d.height)
   })
 
-  const y = d3.scaleLinear()
-    .domain([0, 828])
-    .range([0, 400])
+  const y = d3.scaleLog([0, 828],[0, 200])
 
   const rects = svg.selectAll("rect")
     .data(data)
@@ -26,4 +24,4 @@ d3.json("data/buildings.json").then(data => {
     .attr("width", 40)
     .attr("height", d => y(d.height))
     .attr("fill", "grey")
-})
+}).catch(error => {console.log(error)})

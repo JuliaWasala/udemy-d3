@@ -13,18 +13,12 @@ d3.json("data/buildings.json").then(data => {
     d.height = Number(d.height)
   })
 
-  const x = d3.scaleBand()
-    .domain(["Burj Khalifa", "Shanghai Tower", 
-      "Abraj Al-Bait Clock Tower", "Ping An Finance Centre", 
-      "Lotte World Tower", "One World Trade Center",
-      "CTF Finance Centre"])
-    .range([0, 400])
-    .paddingInner(0.3)
-    .paddingOuter(0.2)
-  
-  const y = d3.scaleLinear()
-    .domain([0, 828])
-    .range([0, 400])
+  const y = d3.scaleLinear().domain([0, 828]).range([0, 400])
+  const x= d3.scaleBand()
+      .domain(data.map(d => d.name))
+      .range([0, 400])
+      .paddingInner(0.3)
+      .paddingOuter(0.2)
 
   const rects = svg.selectAll("rect")
     .data(data)
@@ -35,4 +29,4 @@ d3.json("data/buildings.json").then(data => {
     .attr("width", x.bandwidth)
     .attr("height", d => y(d.height))
     .attr("fill", "grey")
-})
+}).catch(error => {console.log(error)})

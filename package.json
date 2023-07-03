@@ -1,0 +1,14 @@
+{
+  "name": "udemy-d3",
+  "version": "1.0.0",
+  "description": "A collection of files for \"Mastering data visualization in D3.js\"",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "http-server": "^14.1.1"
+  }
+}
