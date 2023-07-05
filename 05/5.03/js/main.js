@@ -35,19 +35,19 @@ g.append("text")
   .text("Revenue ($)")
 
 const x = d3.scaleBand()
-  .range([0, WIDTH])
-  .paddingInner(0.3)
-  .paddingOuter(0.2)
-
+      .range([0, WIDTH])
+      .paddingInner(0.3)
+      .paddingOuter(0.2)
+    
 const y = d3.scaleLinear()
   .range([HEIGHT, 0])
 
-const xAxisGroup = g.append("g")
+const xAxisGroup=g.append("g")
   .attr("class", "x axis")
   .attr("transform", `translate(0, ${HEIGHT})`)
 
 const yAxisGroup = g.append("g")
-  .attr("class", "y axis")
+    .attr("class", "y axis")
 
 d3.csv("data/revenues.csv").then(data => {
   data.forEach(d => {
@@ -55,12 +55,12 @@ d3.csv("data/revenues.csv").then(data => {
   })
 
   d3.interval(() => {
-    update(data)
-  }, 1000)
+        update(data)
+      }, 1000)
 
   update(data)
-})
-
+  })
+  
 function update(data) {
   x.domain(data.map(d => d.month))
   y.domain([0, d3.max(data, d => d.revenue)])
