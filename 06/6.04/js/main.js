@@ -20,15 +20,15 @@ let time = 0
 // Tooltip
 const tip = d3.tip()
   .attr('class', 'd3-tip')
-	.html(d => {
-		let text = `<strong>Country:</strong> <span style='color:red;text-transform:capitalize'>${d.country}</span><br>`
-		text += `<strong>Continent:</strong> <span style='color:red;text-transform:capitalize'>${d.continent}</span><br>`
-		text += `<strong>Life Expectancy:</strong> <span style='color:red'>${d3.format(".2f")(d.life_exp)}</span><br>`
-		text += `<strong>GDP Per Capita:</strong> <span style='color:red'>${d3.format("$,.0f")(d.income)}</span><br>`
-		text += `<strong>Population:</strong> <span style='color:red'>${d3.format(",.0f")(d.population)}</span><br>`
-		return text
-	})
-g.call(tip)
+  .html(d => {
+	let text = `<strong>Country:</strong> <span style='color:red;text-transform:capitalize'>${d.country}</span></br>`
+	text += `<strong>Continent:</strong> <span style='color:red;text-transform:capitalize'>${d.continent}</span></br>`
+	text += `<strong>Life Expectancy:</strong> <span style='color:red'>${d3.format(".2f")(d.life_exp)}</span></br>`
+	text += `<strong>GDP Per Capita:</strong> <span style='color:red'>${d3.format("$,.0f")(d.income)}</span></br>`
+	text += `<strong>Population:</strong> <span style='color:red'>${d3.format(",.0f")(d.population)}</span></br>`
+	return text
+  })
+g.call(tip);
 
 // Scales
 const x = d3.scaleLog()
@@ -80,27 +80,28 @@ g.append("g")
 	.attr("class", "y axis")
 	.call(yAxisCall)
 
-const continents = ["europe", "asia", "americas", "africa"]
 
+// Legend
+const continents=["europe","asia","americas","africa"]
 const legend = g.append("g")
-	.attr("transform", `translate(${WIDTH - 10}, ${HEIGHT - 125})`)
-
-continents.forEach((continent, i) => {
+	.attr("transform", `translate(${WIDTH-10}, ${HEIGHT-125})`)
+continents.forEach((continent,i) => {
 	const legendRow = legend.append("g")
 		.attr("transform", `translate(0, ${i * 20})`)
+	
+		legendRow.append("rect")
+		  .attr("width",10)
+		  .attr("height",10)
+		  .attr("fill",continentColor(continent))
 
-	legendRow.append("rect")
-    .attr("width", 10)
-    .attr("height", 10)
-		.attr("fill", continentColor(continent))
-
-	legendRow.append("text")
-    .attr("x", -10)
-    .attr("y", 10)
-    .attr("text-anchor", "end")
-    .style("text-transform", "capitalize")
-    .text(continent)
+		legendRow.append("text")
+		  .attr("x",-10)
+		  .attr("y", 10)
+		  .attr("text-anchor", "end")
+		  .style("text-transform","capitalize")
+		  .text(continent)
 })
+
 
 d3.json("data/data.json").then(function(data){
 	// clean data
@@ -141,8 +142,8 @@ function update(data) {
 	// ENTER new elements present in new data.
 	circles.enter().append("circle")
 		.attr("fill", d => continentColor(d.continent))
-		.on("mouseover", tip.show)
-		.on("mouseout", tip.hide)
+		.on("mouseout",tip.hide)
+		.on("mouseover",tip.show)
 		.merge(circles)
 		.transition(t)
 			.attr("cy", d => y(d.life_exp))

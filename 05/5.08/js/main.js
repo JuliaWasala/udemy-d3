@@ -84,24 +84,23 @@ function update(data) {
     .tickFormat(d => d + "m")
   yAxisGroup.transition(t).call(yAxisCall)
 
-  const rects = g.selectAll("rect")
+  const rects = g.selectAll("circle")
     .data(data, d => d.month)
 
   rects.exit().attr("fill", "red")
     .transition(t)
-      .attr("height", 0)
-      .attr("y",y(0))
+      .attr("r", 5)
+      .attr("cy",y(0))
       .remove()
   
-  rects.enter().append("rect")
-    .attr("y", y(0))
-    .attr("height", 0)
+  rects.enter().append("circle")
+    .attr("cy", y(0))
+    .attr("r", 5)
     .attr("fill", "grey")
     .merge(rects)
     .transition(t)
-      .attr("x", (d) => x(d.month))
-      .attr("width", x.bandwidth)
-      .attr("y", d => y(d[value]))
+      .attr("cx", (d) => x(d.month)+ (x.bandwidth()/2))
+      .attr("cy", d => y(d[value]))
       .attr("height", d => HEIGHT - y(d[value]))
   
   const text = flag ? "Profit ($)" : "Revenue ($)"

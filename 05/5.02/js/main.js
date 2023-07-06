@@ -27,7 +27,7 @@ g.append("text")
 // Y label
 g.append("text")
   .attr("class", "y axis-label")
-  .attr("x", - (HEIGHT / 2))
+  .attr("x", -(HEIGHT / 2))
   .attr("y", -60)
   .attr("font-size", "20px")
   .attr("text-anchor", "middle")

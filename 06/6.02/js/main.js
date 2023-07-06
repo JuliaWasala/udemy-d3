@@ -3,7 +3,6 @@
 *    Mastering Data Visualization with D3.js
 *    6.2 - Adding a legend
 */
-
 const MARGIN = { LEFT: 100, RIGHT: 10, TOP: 10, BOTTOM: 100 }
 const WIDTH = 800 - MARGIN.LEFT - MARGIN.RIGHT
 const HEIGHT = 500 - MARGIN.TOP - MARGIN.BOTTOM
@@ -67,26 +66,26 @@ g.append("g")
 	.attr("class", "y axis")
 	.call(yAxisCall)
 
-const continents = ["europe", "asia", "americas", "africa"]
+const continents=["europe","asia","americas","africa"]
 
 const legend = g.append("g")
-	.attr("transform", `translate(${WIDTH - 10}, ${HEIGHT - 125})`)
+	.attr("transform", `translate(${WIDTH-10}, ${HEIGHT-125})`)
 
-continents.forEach((continent, i) => {
+continents.forEach((continent,i) => {
 	const legendRow = legend.append("g")
 		.attr("transform", `translate(0, ${i * 20})`)
+	
+		legendRow.append("rect")
+		  .attr("width",10)
+		  .attr("height",10)
+		  .attr("fill",continentColor(continent))
 
-	legendRow.append("rect")
-    .attr("width", 10)
-    .attr("height", 10)
-		.attr("fill", continentColor(continent))
-
-	legendRow.append("text")
-    .attr("x", -10)
-    .attr("y", 10)
-    .attr("text-anchor", "end")
-    .style("text-transform", "capitalize")
-    .text(continent)
+		legendRow.append("text")
+		  .attr("x",-10)
+		  .attr("y", 10)
+		  .attr("text-anchor", "end")
+		  .style("text-transform","capitalize")
+		  .text(continent)
 })
 
 d3.json("data/data.json").then(function(data){
