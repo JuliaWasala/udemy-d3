@@ -4,12 +4,20 @@
   "description": "A collection of files for \"Mastering data visualization in D3.js\"",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "vscode:prepublish": "npm run esbuild-base -- --minify",
+    "esbuild-base": "esbuild ./src/extension.ts --bundle --outfile=out/main.js --external:vscode --format=cjs --platform=node",
+    "esbuild": "npm run esbuild-base -- --sourcemap",
+    "esbuild-watch": "npm run esbuild-base -- --sourcemap --watch",
+    "test-compile": "tsc -p ./"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "http-server": "^14.1.1",
-    "npx": "^10.2.2"
+    "npx": "^10.2.2",
+    "typescript": "^5.1.6"
+  },
+  "devDependencies": {
+    "esbuild": "^0.18.11"
   }
 }
