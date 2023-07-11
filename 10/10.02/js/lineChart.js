@@ -4,163 +4,165 @@
 *    10.2 - File Separation
 */
 
-const MARGIN = { LEFT: 100, RIGHT: 100, TOP: 50, BOTTOM: 100 }
-const WIDTH = 800 - MARGIN.LEFT - MARGIN.RIGHT
-const HEIGHT = 500 - MARGIN.TOP - MARGIN.BOTTOM
+class LineChart {
 
-const svg = d3.select("#chart-area").append("svg")
-  .attr("width", WIDTH + MARGIN.LEFT + MARGIN.RIGHT)
-  .attr("height", HEIGHT + MARGIN.TOP + MARGIN.BOTTOM)
-
-const g = svg.append("g")
-  .attr("transform", `translate(${MARGIN.LEFT}, ${MARGIN.TOP})`)
-
-// time parsers/formatters
-const parseTime = d3.timeParse("%d/%m/%Y")
-const formatTime = d3.timeFormat("%d/%m/%Y")
-// for tooltip
-const bisectDate = d3.bisector(d => d.date).left
-
-// add the line for the first time
-g.append("path")
-	.attr("class", "line")
-	.attr("fill", "none")
-	.attr("stroke", "grey")
-	.attr("stroke-width", "3px")
-
-// axis labels
-const xLabel = g.append("text")
-	.attr("class", "x axisLabel")
-	.attr("y", HEIGHT + 50)
-	.attr("x", WIDTH / 2)
-	.attr("font-size", "20px")
-	.attr("text-anchor", "middle")
-	.text("Time")
-const yLabel = g.append("text")
-	.attr("class", "y axisLabel")
-	.attr("transform", "rotate(-90)")
-	.attr("y", -60)
-	.attr("x", -170)
-	.attr("font-size", "20px")
-	.attr("text-anchor", "middle")
-	.text("Price ($)")
-
-// scales
-const x = d3.scaleTime().range([0, WIDTH])
-const y = d3.scaleLinear().range([HEIGHT, 0])
-
-// axis generators
-const xAxisCall = d3.axisBottom()
-const yAxisCall = d3.axisLeft()
-	.ticks(6)
-	.tickFormat(d => `${parseInt(d / 1000)}k`)
-
-// axis groups
-const xAxis = g.append("g")
-	.attr("class", "x axis")
-	.attr("transform", `translate(0, ${HEIGHT})`)
-const yAxis = g.append("g")
-	.attr("class", "y axis")
-
-
-function update() {
-	const t = d3.transition().duration(1000)
-
-	// filter data based on selections
-	const coin = $("#coin-select").val()
-	const yValue = $("#var-select").val()
-	const sliderValues = $("#date-slider").slider("values")
-	const dataTimeFiltered = filteredData[coin].filter(d => {
-		return ((d.date >= sliderValues[0]) && (d.date <= sliderValues[1]))
-	})
-
-	// update scales
-	x.domain(d3.extent(dataTimeFiltered, d => d.date))
-	y.domain([
-		d3.min(dataTimeFiltered, d => d[yValue]) / 1.005, 
-		d3.max(dataTimeFiltered, d => d[yValue]) * 1.005
-	])
-
-	// fix for format values
-	const formatSi = d3.format(".2s")
-	function formatAbbreviation(x) {
-		const s = formatSi(x)
-		switch (s[s.length - 1]) {
-			case "G": return s.slice(0, -1) + "B" // billions
-			case "k": return s.slice(0, -1) + "K" // thousands
-		}
-		return s
+	constructor(_parentElement, _coin) {
+		this.parentElement = _parentElement;
+		this.coin = _coin;
+		this.initVis();
 	}
 
-	// update axes
-	xAxisCall.scale(x)
-	xAxis.transition(t).call(xAxisCall)
-	yAxisCall.scale(y)
-	yAxis.transition(t).call(yAxisCall.tickFormat(formatAbbreviation))
+	initVis() {
+		const vis=this;
 
-	// clear old tooltips
-	d3.select(".focus").remove()
-	d3.select(".overlay").remove()
+		vis.MARGIN = { LEFT: 50, RIGHT: 20, TOP: 50, BOTTOM: 50 };
+		vis.WIDTH = 350 -vis.MARGIN.LEFT -vis.MARGIN.RIGHT;
+		vis.HEIGHT = 250 -vis.MARGIN.TOP -vis.MARGIN.BOTTOM;
 
-	/******************************** Tooltip Code ********************************/
+		vis.svg = d3.select(vis.parentElement).append("svg")
+		.attr("width",vis.WIDTH +vis.MARGIN.LEFT +vis.MARGIN.RIGHT)
+		.attr("height",vis.HEIGHT +vis.MARGIN.TOP +vis.MARGIN.BOTTOM);
 
-	const focus = g.append("g")
-		.attr("class", "focus")
-		.style("display", "none")
+		vis.g =vis.svg.append("g")
+		.attr("transform", `translate(${vis.MARGIN.LEFT}, ${vis.MARGIN.TOP})`);
 
-	focus.append("line")
-		.attr("class", "x-hover-line hover-line")
-		.attr("y1", 0)
-		.attr("y2", HEIGHT)
 
-	focus.append("line")
-		.attr("class", "y-hover-line hover-line")
-		.attr("x1", 0)
-		.attr("x2", WIDTH)
+		// for tooltip
+		vis.bisectDate = d3.bisector(d => d.date).left;
 
-	focus.append("circle")
-		.attr("r", 7.5)
+		// add the line for the first time
+		vis.g.append("path")
+			.attr("class", "line")
+			.attr("fill", "none")
+			.attr("stroke", "grey")
+			.attr("stroke-width", "3px");
 
-	focus.append("text")
-		.attr("x", 15)
-		.attr("dy", ".31em")
+		// axis labels
+		vis.xLabel = vis.g.append("text")
+			.attr("class", "x axisLabel")
+			.attr("y",vis.HEIGHT + 50)
+			.attr("x",vis.WIDTH / 2)
+			.attr("font-size", "20px")
+			.attr("text-anchor", "middle")
+			.text(vis.coin);
 
-	g.append("rect")
-		.attr("class", "overlay")
-		.attr("width", WIDTH)
-		.attr("height", HEIGHT)
-		.on("mouseover", () => focus.style("display", null))
-		.on("mouseout", () => focus.style("display", "none"))
-		.on("mousemove", mousemove)
+		// scales
+		vis.x = d3.scaleTime().range([0,vis.WIDTH]);
+		vis.y = d3.scaleLinear().range([vis.HEIGHT, 0]);
 
-	function mousemove() {
-		const x0 = x.invert(d3.mouse(this)[0])
-		const i = bisectDate(dataTimeFiltered, x0, 1)
-		const d0 = dataTimeFiltered[i - 1]
-		const d1 = dataTimeFiltered[i]
-		const d = x0 - d0.date > d1.date - x0 ? d1 : d0
-		focus.attr("transform", `translate(${x(d.date)}, ${y(d[yValue])})`)
-		focus.select("text").text(d[yValue])
-		focus.select(".x-hover-line").attr("y2", HEIGHT - y(d[yValue]))
-		focus.select(".y-hover-line").attr("x2", -x(d.date))
+		// axis generators
+		vis.xAxisCall = d3.axisBottom()
+			.ticks(3);
+		vis.yAxisCall = d3.axisLeft()
+			.ticks(6)
+			.tickFormat(d => `${parseInt(d / 1000)}k`);
+
+		// axis groups
+		vis.xAxis = vis.g.append("g")
+			.attr("class", "x axis")
+			.attr("transform", `translate(0, ${vis.HEIGHT})`);
+		vis.yAxis = vis.g.append("g")
+			.attr("class", "y axis");
+
+		vis.wrangleData();
 	}
-	
-	/******************************** Tooltip Code ********************************/
 
-	// Path generator
-	line = d3.line()
-		.x(d => x(d.date))
-		.y(d => y(d[yValue]))
+	wrangleData() {
+		const vis = this;
+		vis.value = $("#var-select").val();
+		vis.sliderValues = $("#date-slider").slider("values");
+		vis.dataTimeFiltered = filteredData[vis.coin]
+			.filter(d => { 
+				return ((d.date >= vis.sliderValues[0]) && (d.date <= vis.sliderValues[1])) 
+			});
+		// filter data by date
 
-	// Update our line path
-	g.select(".line")
-		.transition(t)
-		.attr("d", line(dataTimeFiltered))
+		vis.updateVis();
+	}
 
-	// Update y-axis label
-	const newText = (yValue === "price_usd") ? "Price ($)" 
-		: (yValue === "market_cap") ? "Market Capitalization ($)" 
-			: "24 Hour Trading Volume ($)"
-	yLabel.text(newText)
+	updateVis() {
+		const vis = this;
+
+		vis.t = d3.transition().duration(1000);
+
+		// set scale domains
+		vis.x.domain(d3.extent(vis.dataTimeFiltered, d => d.date));
+		vis.y.domain([
+			d3.min(vis.dataTimeFiltered, d => d[vis.value]) / 1.005,
+			d3.max(vis.dataTimeFiltered, d => d[vis.value]) * 1.005
+		]);
+
+		vis.formatSi = d3.format(".2s");
+		function formatAbbreviation(x) {
+			const s = vis.formatSi(x)
+			switch (s[s.length - 1]) {
+				case "G": return s.slice(0, -1) + "B"
+				case "k": return s.slice(0, -1) + "K"
+			}
+			return s
+		};
+		// generate axes once scales have been set
+		vis.xAxisCall.scale(vis.x);
+		vis.xAxis.transition(vis.t).call(vis.xAxisCall);
+		vis.yAxisCall.scale(vis.y);
+		vis.yAxis.transition(vis.t).call(vis.yAxisCall.tickFormat(formatAbbreviation));
+
+		// clear old tooltips
+		d3.select(".focus").remove();
+		d3.select(".overlay").remove();
+
+		/******************************** Tooltip Code ********************************/
+
+		vis.focus = vis.g.append("g")
+			.attr("class", "focus")
+			.style("display", "none");
+
+		vis.focus.append("line")
+			.attr("class", "x-hover-line hover-line")
+			.attr("y1", 0)
+			.attr("y2",vis.HEIGHT);
+
+		vis.focus.append("line")
+			.attr("class", "y-hover-line hover-line")
+			.attr("x1", 0)
+			.attr("x2",vis.WIDTH);
+
+		vis.focus.append("circle")
+			.attr("r", 7.5);
+
+		vis.focus.append("text")
+			.attr("x", 15)
+			.attr("dy", ".31em");
+
+		vis.g.append("rect")
+			.attr("class", "overlay")
+			.attr("width",vis.WIDTH)
+			.attr("height",vis.HEIGHT)
+			.on("mouseover", () => vis.focus.style("display", null))
+			.on("mouseout", () => vis.focus.style("display", "none"))
+			.on("mousemove", mousemove);
+
+		function mousemove() {
+			const x0 = vis.x.invert(d3.mouse(this)[0]);
+			const i = vis.bisectDate(vis.dataTimeFiltered, x0, 1);
+			const d0 = vis.dataTimeFiltered[i - 1];
+			const d1 = vis.dataTimeFiltered[i];
+			const d = x0 - d0[vis.value] > d1[vis.value] - x0 ? d1 : d0;
+			vis.focus.attr("transform", `translate(${vis.x(d.date)}, ${vis.y(d[vis.value])})`);
+			vis.focus.select("text").text(d[vis.value]);
+			vis.focus.select(".x-hover-line").attr("y2",vis.HEIGHT - vis.y(d[vis.value]));
+			vis.focus.select(".y-hover-line").attr("x2", -vis.x(d.date));
+		};
+
+		/******************************** Tooltip Code ********************************/
+		// line path generator
+		vis.line = d3.line()
+			.x(d => vis.x(d.date))
+			.y(d => vis.y(d[vis.value]));
+
+		// add line to chart
+		vis.g.select(".line")
+			.transition(vis.t)
+			.attr("d", vis.line(vis.dataTimeFiltered));
+	}
 }
-

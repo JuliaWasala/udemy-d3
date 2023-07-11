@@ -5,6 +5,24 @@
 *    FreedomCorp Dashboard
 */
 
+class StackedAreaChart {
+  constructor(_parentElement, _variable) {
+    this.parentElement = _parentElement;
+    this.variable = _variable;
+
+    this.initVis();
+  }
+
+  initVis() {
+    let vis = this;
+    // TODO
+    vis.MARGIN = { TOP: 20, RIGHT: 30, BOTTOM: 30, LEFT: 40 };
+    vis.WIDTH = 250
+
+  }
+
+}
+
 var svg = d3.select("svg"),
   margin = {top: 20, right: 20, bottom: 30, left: 50},
   width = svg.attr("width") - margin.left - margin.right,

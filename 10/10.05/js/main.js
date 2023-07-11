@@ -4,70 +4,67 @@
 *    10.5 - Handling events across objects
 */
 
-// global variables
-let lineChart
-let donutChart1
-let donutChart2
-let filteredData = {}
-let donutData = []
-const color = d3.scaleOrdinal(d3.schemePastel1)
+let lineChart;
+let donutChart1;
+let donutChart2;
 
-// time parsers/formatters
-const parseTime = d3.timeParse("%d/%m/%Y")
-const formatTime = d3.timeFormat("%d/%m/%Y")
+let filteredData = {};
+let donutData = [];
 
-// event listeners
-$("#coin-select").on("change", updateCharts)
-$("#var-select").on("change", updateCharts)
+const color = d3.scaleOrdinal(d3.schemePastel1);
 
-// add jQuery UI slider
+// time parser for x-scale
+const parseTime = d3.timeParse("%d/%m/%Y");
+const formatTime = d3.timeFormat("%d/%m/%Y");
+
+$("#coin-select").on("change", () => updateCharts())
+$("#var-select").on("change", () => updateCharts());
+
 $("#date-slider").slider({
 	range: true,
-	max: parseTime("31/10/2017").getTime(),
 	min: parseTime("12/5/2013").getTime(),
-	step: 86400000, // one day
-	values: [
-		parseTime("12/5/2013").getTime(),
-		parseTime("31/10/2017").getTime()
-	],
+	max: parseTime("31/10/2017").getTime(),
+	step: 1000 * 60 * 60 * 24, // one day
+	values: [parseTime("12/5/2013").getTime(), parseTime("31/10/2017").getTime()],
 	slide: (event, ui) => {
 		$("#dateLabel1").text(formatTime(new Date(ui.values[0])))
 		$("#dateLabel2").text(formatTime(new Date(ui.values[1])))
-		updateCharts()
+		update()
 	}
-})
-
+});
+    
 d3.json("data/coins.json").then(data => {
-	// prepare and clean data
 	Object.keys(data).forEach(coin => {
 		filteredData[coin] = data[coin]
-			.filter(d => {
-				return !(d["price_usd"] == null)
-			}).map(d => {
-				d["price_usd"] = Number(d["price_usd"])
-				d["24h_vol"] = Number(d["24h_vol"])
-				d["market_cap"] = Number(d["market_cap"])
-				d["date"] = parseTime(d["date"])
-				return d
+			.filter(coin => {
+				const dataExists = (coin["24h_vol"] && coin.market_cap && coin.price_usd);
+				return dataExists;
+			}).map(coin => {
+					coin["24h_vol"] = Number(coin["24h_vol"]);
+					coin.market_cap = Number(coin.market_cap);
+					coin.price_usd = Number(coin.price_usd);
+					coin.date = parseTime(coin.date);
+					return coin;
 			})
 		donutData.push({
-			"coin": coin,
-			"data": filteredData[coin].slice(-1)[0]
-		})
-	})
+		"coin": coin,
+		"data": filteredData[coin].slice(-1)[0]
+		});
+	});
 
-	lineChart = new LineChart("#line-area")
-	donutChart1 = new DonutChart("#donut-area1", "24h_vol")
-	donutChart2 = new DonutChart("#donut-area2", "market_cap")
-})
+	lineChart1 = new LineChart("#line-area");
+	donutChart1 = new DonutChart("#donut-area1", "24h_vol");
+	donutChart2 = new DonutChart("#donut-area2", "market_cap");
+	
+}) 
 
 function arcClicked(arc) {
-	$("#coin-select").val(arc.data.coin)
-	updateCharts()
+	d3.select("#coin-select").property("value", arc.data.coin);
+	updateCharts();
 }
 
-function updateCharts(){
-	lineChart.wrangleData()
-	donutChart1.wrangleData()
-	donutChart2.wrangleData()
+function updateCharts() {
+	lineChart1.wrangleData();
+	donutChart1.wrangleData();
+	donutChart2.wrangleData();
 }
