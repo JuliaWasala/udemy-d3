@@ -1,90 +1,108 @@
 /*
-*    timeline.js
-*    Mastering Data Visualization with D3.js
-*    Project 4 - FreedomCorp Dashboard
-*/
+ *    timeline.js
+ *    Mastering Data Visualization with D3.js
+ *    Project 4 - FreedomCorp Dashboard
+ */
 
 class Timeline {
-	constructor(_parentElement) {
-		this.parentElement = _parentElement
+  constructor(_parentElement) {
+    this.parentElement = _parentElement;
 
-		this.initVis()
-	}
+    this.initVis();
+  }
 
-	initVis() {
-    const vis = this
+  initVis() {
+    this.MARGIN = { LEFT: 40, RIGHT: 30, TOP: 0, BOTTOM: 30 };
+    this.WIDTH = 800 - this.MARGIN.LEFT - this.MARGIN.RIGHT;
+    this.HEIGHT = 130 - this.MARGIN.TOP - this.MARGIN.BOTTOM;
 
-		vis.MARGIN = { LEFT: 80, RIGHT: 100, TOP: 0, BOTTOM: 30 }
-		vis.WIDTH = 800 - vis.MARGIN.LEFT - vis.MARGIN.RIGHT
-		vis.HEIGHT = 130 - vis.MARGIN.TOP - vis.MARGIN.BOTTOM
-		
-		vis.svg = d3.select(vis.parentElement).append("svg")
-			.attr("width", vis.WIDTH + vis.MARGIN.LEFT + vis.MARGIN.RIGHT)
-			.attr("height", vis.HEIGHT + vis.MARGIN.TOP + vis.MARGIN.BOTTOM)
-		
-		vis.g = vis.svg.append("g")
-			.attr("transform", `translate(${vis.MARGIN.LEFT}, ${vis.MARGIN.TOP})`)
-		
-		// scales
-		vis.x = d3.scaleTime().range([0, vis.WIDTH])
-		vis.y = d3.scaleLinear().range([vis.HEIGHT, 0])
-		
-		// x-axis
-		vis.xAxisCall = d3.axisBottom()
-			.ticks(4)
-		vis.xAxis = vis.g.append("g")
-			.attr("class", "x axis")
-			.attr("transform", `translate(0, ${vis.HEIGHT})`)
-        
-    vis.areaPath = vis.g.append("path")
-			.attr("fill", "#ccc")
-		
-		// initialize brush component
-		vis.brush = d3.brushX()
+    this.svg = d3
+      .select(this.parentElement)
+      .append("svg")
+      .attr("width", this.WIDTH + this.MARGIN.LEFT + this.MARGIN.RIGHT)
+      .attr("height", this.HEIGHT + this.MARGIN.TOP + this.MARGIN.BOTTOM);
+
+    this.g = this.svg
+      .append("g")
+      .attr("transform", `translate(${this.MARGIN.LEFT}, ${this.MARGIN.TOP})`);
+
+    // scales
+    this.x = d3.scaleTime().range([0, this.WIDTH]);
+    this.y = d3.scaleLinear().range([this.HEIGHT, 0]);
+
+    // x-axis
+    this.xAxisCall = d3.axisBottom().ticks(4);
+    this.xAxis = this.g
+      .append("g")
+      .attr("class", "x axis")
+      .attr("transform", `translate(0, ${this.HEIGHT})`);
+
+    this.areaPath = this.g.append("path").attr("fill", "#ccc");
+
+    // initialize brush component
+    this.brush = d3
+      .brushX()
       .handleSize(10)
-			.extent([[0, 0], [vis.WIDTH, vis.HEIGHT]])
-			.on("brush", brushed)
+      .extent([
+        [0, 0],
+        [this.WIDTH, this.HEIGHT],
+      ])
+    	.on("brush end", brushed);
 
-		// append brush component
-		vis.brushComponent = vis.g.append("g")
-			.attr("class", "brush")
-			.call(vis.brush)
+    // append brush component
+    this.brushComponent = this.g
+      .append("g")
+      .attr("class", "brush")
+      .call(this.brush);
 
-		vis.wrangleData()
-	}
+    this.wrangleData();
+  }
 
-	wrangleData() {
-		const vis = this
+  wrangleData() {
+    this.variable = $("#var-select").val();
 
-    vis.coin = $("#coin-select").val()
-    vis.yValue = $("#var-select").val()
-    vis.data = filteredData[vis.coin]
+    this.dayNest = d3
+      .nest()
+      .key((d) => formatDate(d.date))
+      .entries(calls);
 
-		vis.updateVis()
-	}
+    // calculate daily totals of this.variable, and keep date
 
-	updateVis() {
-    const vis = this
+    this.dataFiltered = this.dayNest.map((day) => {
+      return day.values.reduce(
+        (acc, cur) => {
+          acc.date = formatDate(cur.date);
+          acc.total += cur[this.variable];
+          return acc;
+        },
+        { total: 0 }
+      );
+    });
 
-		vis.t = d3.transition().duration(1000)
+    this.updateVis();
+  }
+
+  updateVis() {
+    this.t = d3.transition().duration(1000);
 
     // update scales
-		vis.x.domain(d3.extent(vis.data, d => d.date))
-		vis.y.domain([0, d3.max(vis.data, d => d[vis.yValue]) * 1.005])
-	
-		// update axes
-		vis.xAxisCall.scale(vis.x)
-		vis.xAxis.transition(vis.t).call(vis.xAxisCall)
-  
+    this.x.domain(d3.extent(this.dataFiltered, (d) => parseDate(d.date)));
+    this.y.domain([
+      0,
+      d3.max(this.dataFiltered, (d) => d.total) * 1.005,
+    ]);
+
+    // update axes
+    this.xAxisCall.scale(this.x);
+    this.xAxis.transition(this.t).call(this.xAxisCall);
+
     // area path generator
-    vis.area = d3.area()
-      .x(d => vis.x(d.date))
-      .y0(vis.HEIGHT)
-      .y1(d => vis.y(d[vis.yValue]))
+    this.area = d3
+      .area()
+      .x((d) => this.x(parseDate(d.date)))
+      .y0(this.HEIGHT)
+      .y1((d) => this.y(d.total));
 
-    vis.areaPath
-      .data([vis.data])
-      .attr("d", vis.area)
-	}
+    this.areaPath.data([this.dataFiltered]).attr("d", this.area);
+  }
 }
-

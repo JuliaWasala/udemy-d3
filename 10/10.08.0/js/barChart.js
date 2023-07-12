@@ -1,9 +1,9 @@
 /*
-*    barChart.js
-*    Source: https://bl.ocks.org/mbostock/3885304
-*    Mastering Data Visualization with D3.js
-*    FreedomCorp Dashboard
-*/
+ *    barChart.js
+ *    Source: https://bl.ocks.org/mbostock/3885304
+ *    Mastering Data Visualization with D3.js
+ *    FreedomCorp Dashboard
+ */
 
 class BarChart {
   constructor(_parentElement, _variable) {
@@ -14,87 +14,124 @@ class BarChart {
   }
 
   initVis() {
-    let vis = this;
+    this.MARGIN = { LEFT: 60, RIGHT: 50, TOP: 30, BOTTOM: 30 };
+    this.WIDTH = 350 - this.MARGIN.LEFT - this.MARGIN.RIGHT;
+    this.HEIGHT = 130 - this.MARGIN.TOP - this.MARGIN.BOTTOM;
 
-    vis.MARGIN = { TOP: 20, RIGHT: 30, BOTTOM: 30, LEFT: 40 };
-    vis.WIDTH = 250 - vis.MARGIN.LEFT - vis.MARGIN.RIGHT;
-    vis.HEIGHT = 130 - vis.MARGIN.TOP - vis.MARGIN.BOTTOM;
-
-    vis.svg = d3
-      .select(vis.parentElement)
+    this.svg = d3
+      .select(this.parentElement)
       .append("svg")
-      .attr("width", vis.WIDTH + vis.MARGIN.LEFT + vis.MARGIN.RIGHT)
-      .attr("height", vis.HEIGHT + vis.MARGIN.TOP + vis.MARGIN.BOTTOM);
-    vis.g = vis.svg
+      .attr("width", this.WIDTH + this.MARGIN.LEFT + this.MARGIN.RIGHT)
+      .attr("height", this.HEIGHT + this.MARGIN.TOP + this.MARGIN.BOTTOM);
+    this.g = this.svg
       .append("g")
       .attr(
         "transform",
-        `translate(${vis.MARGIN.LEFT + vis.WIDTH / 2},${
-          vis.MARGIN.TOP + vis.HEIGHT / 2
+        `translate(${this.MARGIN.LEFT},${
+          this.MARGIN.TOP
         })`
       );
 
     // axes
-    vis.x = d3.scaleBand().rangeRound([0, vis.WIDTH]).padding(0.1);
-    vis.y = d3.scaleLinear().rangeRound([vis.HEIGHT, 0]);
+    this.x = d3.scaleBand().rangeRound([0, this.WIDTH]).padding(0.1);
+    this.y = d3.scaleLinear().rangeRound([this.HEIGHT, 0]);
 
-    vis.g.append("g")
+    this.yAxisCall = d3.axisLeft().ticks(4);
+    this.xAxisCall = d3
+      .axisBottom();
+    this.xAxis = this.g
+      .append("g")
       .attr("class", "axis axis--x")
-      .attr("transform", `translate(0,${vis.HEIGHT})`)
-      .call(d3.axisBottom(vis.x));
+      .attr("transform", `translate(0,${this.HEIGHT})`);
+    this.yAxis = this.g.append("g").attr("class", "axis axis--y");
 
-    vis.g.append("g")
-      .attr("class", "axis axis--y")
-      .call(d3.axisLeft(vis.y).ticks(10, "%"))
+    this.yLabel = this.variable === "units_sold" ? "Units sold per call" : (this.variable == "call_revenue" ? "Average call revenue (USD)" : "Average call duration (seconds)");
+    
+    this.g
       .append("text")
-      .attr("transform", "rotate(-90)")
-      .attr("y", 6)
-      .attr("dy", "0.71em")
-      .attr("text-anchor", "end")
-      .text("Frequency");
+      .attr("y", -15)
+      .attr("x", -50)
+      .attr("font-size", "12px")
+      .attr("text-anchor", "start")
+      .text(this.yLabel);
 
+    this.color = d3.scaleOrdinal(d3.schemeAccent);
 
-    vis.wrangleData();
+    this.wrangleData();
   }
 
   wrangleData() {
-    let vis = this;
+    const categoryNest = d3
+      .nest()
+      .key((d) => d.category)
+      .entries(calls);
 
-    vis.updateVis();
+    this.filteredData = categoryNest.map((category) => {
+      return {
+        value: category["key"],
+        count:
+          this.variable === "units_sold"
+            ? this.get_sum(category.values)
+            : this.get_mean(category.values),
+      };
+    });
+
+    this.updateVis();
   }
 
-  updateVis() {
-    const vis = this;
+  get_sum = (arr) =>
+    arr.reduce((acc, n) => {
+      acc += n[this.variable];
+      return acc;
+    }, 0);
 
-    vis.x.domain(
-      data.map(function (d) {
-        return d.letter;
-      })
+  get_mean = (arr) => this.get_sum(arr) / arr.length;
+
+  
+  updateVis() {
+    this.t = d3.transition().duration(1000);
+
+    this.x.domain(
+      this.filteredData.map((d) => d.value)
     );
     // TODO update val
-    vis.y.domain([
+    this.y.domain([
       0,
-      d3.max(data, function (d) {
-        return d.frequency;
-      }),
+      d3.max(this.filteredData, d=>d.count),
     ]);
 
-    vis.g.selectAll(".bar")
-      .data(data)
+    this.xAxisCall.scale(this.x);
+    this.xAxis.transition().duration(500).call(this.xAxisCall);
+
+    this.yAxisCall.scale(this.y);
+    this.yAxis.transition().duration(500).call(this.yAxisCall);
+
+    this.rects = this.g.selectAll("rect").data(this.filteredData, d=>d.value);
+
+    this.rects.exit()
+      .attr("class", "exit")
+      .transition(this.t)
+        .attr("height", 0)
+        .attr("y", this.HEIGHT)
+        .style("fill-opacity", "0.1")
+        .remove();
+
+    this.rects
+      .attr("class","update")
+      .transition(this.t)
+        .attr("y", d=>this.y(d.count))
+        .attr("height", d=>this.HEIGHT - this.y(d.count))
+        .attr("x", d=>this.x(d.value))
+        .attr("width", this.x.bandwidth);
+
+    this.rects
       .enter()
       .append("rect")
       .attr("class", "bar")
-      .attr("x", function (d) {
-        return vis.x(d.letter);
-      })
-      .attr("y", function (d) {
-        return vis.y(d.frequency);
-      })
-      .attr("width", vis.x.bandwidth())
-      .attr("height", function (d) {
-        return vis.HEIGHT - vis.y(d.frequency);
-      });
+      .attr("x", d=> this.x(d.value))
+      .attr("y", d=>this.y(d.count))
+      .attr("width", this.x.bandwidth())
+      .attr("height", d=> this.HEIGHT - this.y(d.count))
+      .attr("fill", (d) => this.color(d.value));
   }
-
 }
-

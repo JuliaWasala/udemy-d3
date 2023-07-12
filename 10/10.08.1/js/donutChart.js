@@ -67,9 +67,9 @@ class DonutChart {
 	}
 
 	updateVis() {
-    const vis = this
 
-    vis.t = d3.transition().duration(750)
+
+    this.t = d3.transition().duration(750)
 
     vis.path = vis.g.selectAll("path")
       .data(vis.pie(vis.dataFiltered))
